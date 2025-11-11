@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>系统设置</h3>
+
+<form method="post">
+  <div class="row">
+    <div class="col-md-3">
+      <div class="mb-3">
+        <label class="form-label">管理页面协议</label>
+        <select class="form-select" name="admin_protocol">
+          {% set ap = cfg.admin_protocol %}
+          <option value="http" {{ 'selected' if ap == 'http' else '' }}>http</option>
+          <option value="https" {{ 'selected' if ap == 'https' else '' }}>https</option>
+        </select>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="mb-3">
+        <label class="form-label">管理页面端口</label>
+        <input class="form-control" name="admin_port" type="number" min="1" max="65535" value="{{ cfg.admin_port }}">
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="mb-3">
+        <label class="form-label">模拟接口协议</label>
+        <select class="form-select" name="mock_protocol">
+          {% set mp = cfg.mock_protocol %}
+          <option value="http" {{ 'selected' if mp == 'http' else '' }}>http</option>
+          <option value="https" {{ 'selected' if mp == 'https' else '' }}>https</option>
+        </select>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="mb-3">
+        <label class="form-label">模拟接口端口</label>
+        <input class="form-control" name="mock_port" type="number" min="1" max="65535" value="{{ cfg.mock_port }}">
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <label class="form-label">SSL 证书路径（可选）</label>
+        <input class="form-control" name="ssl_cert" value="{{ cfg.ssl_cert if cfg.ssl_cert else '' }}">
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <label class="form-label">SSL 私钥路径（可选）</label>
+        <input class="form-control" name="ssl_key" value="{{ cfg.ssl_key if cfg.ssl_key else '' }}">
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">保存</button>
+    <a class="btn btn-secondary" href="/admin/mocks">返回</a>
+  </div>
+</form>
+
+<p class="text-muted mt-3">提示：配置会写入 <code>config.json</code>，保存后重启服务生效。</p>
+{% endblock %}

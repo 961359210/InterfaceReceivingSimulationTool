@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">接口列表</h3>
+  <a class="btn btn-primary" href="/admin/mocks/new">新建接口</a>
+  </div>
+
+<div class="table-responsive">
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>方法</th>
+        <th>协议</th>
+        <th>路径</th>
+        <th>状态码</th>
+        <th>类型</th>
+        <th>启用</th>
+        <th>延迟(ms)</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in mocks %}
+      <tr>
+        <td>{{ m.id }}</td>
+        <td>{{ m.method }}</td>
+        <td>{{ m.scheme }}</td>
+        <td><code>{{ m.path }}</code></td>
+        <td>{{ m.status_code }}</td>
+        <td>{{ m.content_type }}</td>
+        <td>{{ '是' if m.enabled else '否' }}</td>
+        <td>{{ m.delay_ms }}</td>
+        <td class="d-flex gap-2">
+          <a class="btn btn-sm btn-secondary" href="/admin/mocks/{{ m.id }}/edit">编辑</a>
+          <form method="post" action="/admin/mocks/{{ m.id }}/delete" onsubmit="return confirm('确认删除该接口？');">
+            <button type="submit" class="btn btn-sm btn-danger">删除</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<p class="text-muted">提示：模拟接口通过配置的 <code>方法 + 路径</code> 精确匹配。</p>
+{% endblock %}

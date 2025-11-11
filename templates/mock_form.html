@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>{{ '编辑接口' if mock else '新建接口' }}</h3>
+
+<form method="post" action="{{ '/admin/mocks/' ~ mock.id ~ '/update' if mock else '/admin/mocks' }}">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <label class="form-label">路径（例如 /api/test）</label>
+        <input class="form-control" name="path" required value="{{ mock.path if mock else '' }}">
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="mb-3">
+        <label class="form-label">方法</label>
+        <select class="form-select" name="method">
+          {% set cur = mock.method if mock else 'GET' %}
+          {% for m in ['GET','POST','PUT','DELETE','PATCH','OPTIONS'] %}
+          <option value="{{ m }}" {{ 'selected' if cur == m else '' }}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="mb-3">
+        <label class="form-label">状态码</label>
+        <select class="form-select" name="status_code">
+          {% set cur_code = mock.status_code if mock else 200 %}
+          <option value="200" {{ 'selected' if cur_code == 200 else '' }}>200 OK</option>
+          <option value="201" {{ 'selected' if cur_code == 201 else '' }}>201 Created</option>
+          <option value="202" {{ 'selected' if cur_code == 202 else '' }}>202 Accepted</option>
+          <option value="204" {{ 'selected' if cur_code == 204 else '' }}>204 No Content</option>
+          <option value="301" {{ 'selected' if cur_code == 301 else '' }}>301 Moved Permanently</option>
+          <option value="302" {{ 'selected' if cur_code == 302 else '' }}>302 Found</option>
+          <option value="304" {{ 'selected' if cur_code == 304 else '' }}>304 Not Modified</option>
+          <option value="400" {{ 'selected' if cur_code == 400 else '' }}>400 Bad Request</option>
+          <option value="401" {{ 'selected' if cur_code == 401 else '' }}>401 Unauthorized</option>
+          <option value="403" {{ 'selected' if cur_code == 403 else '' }}>403 Forbidden</option>
+          <option value="404" {{ 'selected' if cur_code == 404 else '' }}>404 Not Found</option>
+          <option value="405" {{ 'selected' if cur_code == 405 else '' }}>405 Method Not Allowed</option>
+          <option value="409" {{ 'selected' if cur_code == 409 else '' }}>409 Conflict</option>
+          <option value="415" {{ 'selected' if cur_code == 415 else '' }}>415 Unsupported Media Type</option>
+          <option value="422" {{ 'selected' if cur_code == 422 else '' }}>422 Unprocessable Entity</option>
+          <option value="429" {{ 'selected' if cur_code == 429 else '' }}>429 Too Many Requests</option>
+          <option value="500" {{ 'selected' if cur_code == 500 else '' }}>500 Internal Server Error</option>
+          <option value="502" {{ 'selected' if cur_code == 502 else '' }}>502 Bad Gateway</option>
+          <option value="503" {{ 'selected' if cur_code == 503 else '' }}>503 Service Unavailable</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-3">
+      <div class="mb-3">
+        <label class="form-label">协议</label>
+        <select class="form-select" name="scheme">
+          {% set cur_scheme = mock.scheme if mock else 'http' %}
+          <option value="http" {{ 'selected' if cur_scheme == 'http' else '' }}>http</option>
+          <option value="https" {{ 'selected' if cur_scheme == 'https' else '' }}>https</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <label class="form-label">Content-Type</label>
+        <input class="form-control" name="content_type" value="{{ mock.content_type if mock else 'application/json' }}">
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <label class="form-label">延迟（毫秒）</label>
+        <input class="form-control" name="delay_ms" type="number" min="0" value="{{ mock.delay_ms if mock else 0 }}">
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">响应头（JSON）</label>
+    <textarea class="form-control" name="headers_json" rows="4" placeholder='{"X-Trace":"abc"}'>{{ mock.headers_json if mock else '{}' }}</textarea>
+    {% if form_error == 'headers_json' %}<div class="text-danger">JSON 格式无效</div>{% endif %}
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">响应体（文本或 JSON）</label>
+    <textarea class="form-control" name="body" rows="8" placeholder='{"message":"ok"}'>{{ mock.body if mock else '' }}</textarea>
+  </div>
+
+  <div class="form-check mb-3">
+    <input class="form-check-input" type="checkbox" name="enabled" id="enabled" {{ 'checked' if (mock and mock.enabled) or not mock else '' }}>
+    <label class="form-check-label" for="enabled">启用</label>
+  </div>
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">保存</button>
+    <a class="btn btn-secondary" href="/admin/mocks">返回列表</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,8 @@
+{
+  "admin_protocol": "http",
+  "admin_port": 5174,
+  "mock_protocol": "http",
+  "mock_port": 5175,
+  "ssl_cert": null,
+  "ssl_key": null
+}

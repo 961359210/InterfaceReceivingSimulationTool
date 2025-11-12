@@ -2,6 +2,7 @@ import json
 import os
 import sqlite3
 import sys
+import logging
 from flask import Flask, request, jsonify, g, render_template, redirect, url_for, flash, Blueprint, make_response
 
 
@@ -63,6 +64,14 @@ def init_db():
 def create_app(include_admin: bool = True, include_mock: bool = True):
     app = Flask(__name__, template_folder=resource_path('templates'))
     app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret')
+    # 初始化结构化日志，仅添加一次 handler 避免重复
+    logger = logging.getLogger('mock_service')
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
 
     @app.before_request
     def before_request():
@@ -247,16 +256,51 @@ def create_app(include_admin: bool = True, include_mock: bool = True):
         def mock_dispatch(req_path):
             # Do not capture admin routes
             if request.path.startswith('/admin'):
+                logging.getLogger('mock_service').warning(
+                    f"[404] Admin path blocked: {request.method} {request.path}"
+                )
                 return 'Not Found', 404
 
             db = get_db()
             cur_scheme = getattr(request, 'scheme', 'http') or 'http'
+            # 记录请求关键信息
+            try:
+                qs = request.query_string.decode('utf-8', 'ignore')
+            except Exception:
+                qs = ''
+            body_preview = ''
+            if request.method in ('POST', 'PUT', 'PATCH'):
+                try:
+                    body_preview = request.get_data(as_text=True)[:1000]
+                except Exception:
+                    body_preview = '<unavailable>'
+            logging.getLogger('mock_service').info(
+                f"[REQ] {request.method} {request.path} scheme={cur_scheme} qs='{qs}' ip={request.remote_addr} "
+                f"ctype={request.headers.get('Content-Type')} ua={request.headers.get('User-Agent')} body_len={len(body_preview)}"
+            )
             row = db.execute(
                 'SELECT * FROM mocks WHERE path = ? AND method = ? AND scheme = ? AND enabled = 1',
                 (f'/{req_path}', request.method, cur_scheme)
             ).fetchone()
 
             if not row:
+                # 细化404原因并打印日志
+                rows_for_path = db.execute(
+                    'SELECT method, scheme, enabled FROM mocks WHERE path = ?', (f'/{req_path}',)
+                ).fetchall()
+                if not rows_for_path:
+                    reason = '路径未配置'
+                elif not any(r['method'] == request.method for r in rows_for_path):
+                    reason = '方法未配置'
+                elif not any(r['method'] == request.method and r['scheme'] == cur_scheme for r in rows_for_path):
+                    reason = '协议不匹配'
+                elif not any(r['method'] == request.method and r['scheme'] == cur_scheme and r['enabled'] == 1 for r in rows_for_path):
+                    reason = '接口已禁用'
+                else:
+                    reason = '未匹配的其他原因'
+                logging.getLogger('mock_service').warning(
+                    f"[404] {request.method} {request.path} reason={reason} scheme={cur_scheme}"
+                )
                 return 'Mock 未配置', 404
 
             # Optional delay
@@ -277,11 +321,18 @@ def create_app(include_admin: bool = True, include_mock: bool = True):
                 headers = json.loads(row['headers_json'] or '{}')
             except Exception:
                 headers = {}
+                logging.getLogger('mock_service').warning(
+                    f"Invalid headers_json for mock id={row['id']} path={row['path']}"
+                )
 
             resp = make_response(body_text, status_code)
             resp.headers['Content-Type'] = content_type
             for k, v in headers.items():
                 resp.headers[k] = v
+            logging.getLogger('mock_service').info(
+                f"[RESP] {request.method} {request.path} -> {status_code} ctype={content_type} headers={len(headers)} "
+                f"body_len={len(body_text or '')} delay_ms={delay_ms}"
+            )
             return resp
 
     return app
